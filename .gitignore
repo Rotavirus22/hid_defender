@@ -1,0 +1,4 @@
+# Ignore runtime logs and generated files
+hid_alerts.log
+__pycache__/
+*.py[cod]
