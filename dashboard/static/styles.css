@@ -1,0 +1,109 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f7f9fc;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: #1f2937;
+    color: #fff;
+}
+
+header .logo {
+    font-weight: 700;
+    text-decoration: none;
+    color: #fff;
+}
+
+main {
+    max-width: 1400px;
+    margin: 1.5rem auto;
+    padding: 0 1rem;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.card {
+    border-radius: 0.8rem;
+    padding: 1.2rem;
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.1);
+}
+
+.card h3 {
+    margin-top: 0;
+    font-size: 1.05rem;
+}
+
+.card p {
+    font-size: 2.3rem;
+    margin: 0.6rem 0 0;
+}
+
+.card.success { background: #effdf5; }
+.card.info { background: #eff6ff; }
+.card.warning { background: #fff7ed; }
+.card.danger { background: #fef2f2; }
+
+.bounce {
+    animation: bounceIn 0.6s ease-out;
+}
+
+@keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+thead th {
+    text-align: left;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 0.9rem 0.8rem;
+    font-size: 0.95rem;
+}
+
+tbody td {
+    padding: 0.75rem 0.8rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.92rem;
+}
+
+tr.trusted { background: #effdf5; }
+tr.safe { background: #eff6ff; }
+tr.untrusted { background: #fef2f2; }
+
+footer {
+    text-align: center;
+    padding: 1rem 0;
+    color: #6b7280;
+}

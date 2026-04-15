@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="refresh" content="10" />
+    <title>HID Defender Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mini.css/3.0.1/mini-default.min.css" integrity="sha512-KCfQv1AVT8E8R6mXjfmgu0+GvW6pQILEFiz8fWxEOYpt86LX3zwIOIY3l+9dmK/wvlr1JKIGpm2BPVJjDrBb2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+<header>
+    <a href="/" class="logo">🛡️ HID Defender Dashboard</a>
+    <a class="button" href="/">🔄 Refresh</a>
+</header>
+<main>
+    {% block content %}{% endblock %}
+</main>
+<footer>
+    <p>HID Defender dashboard — shows attack events, timing, device logs, and whitelist status. Auto-refreshes every 10 seconds.</p>
+</footer>
+</body>
+</html>

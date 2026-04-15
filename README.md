@@ -10,6 +10,10 @@ A Python-based project that detects suspicious USB Human Interface Devices (HID)
 
 ```
 hid-defender/
+├── dashboard/                   ← Flask dashboard application
+│   ├── app.py                  ← Dashboard entrypoint
+│   ├── templates/              ← Dashboard HTML templates
+│   └── static/                 ← Dashboard styles and assets
 ├── hid_defender.py              ← Main application entrypoint
 ├── trusted_devices.json         ← Whitelist of trusted HID devices
 ├── trusted_devices_example.json ← Example whitelist file
@@ -21,7 +25,7 @@ hid-defender/
     ├── config.py                ← Constants and platform detection
     ├── device_monitor.py        ← USB/HID device discovery helpers
     ├── device_validator.py      ← Whitelist + evaluation logic
-    ├── keystroke_monitor.py     ← Keystroke and command detection
+    ├── keystroke_monitor.py     ← Keystroke speed / command detection
     └── logging_setup.py         ← Logger / audit log formatter
 ```
 
@@ -137,6 +141,22 @@ The script will:
 - load the trusted whitelist
 - watch for new HID device events
 - log and alert when an unknown device connects
+
+### Dashboard mode
+
+```bash
+python3 dashboard/app.py
+```
+
+Then open `http://localhost:5000` in a browser.
+
+The dashboard shows:
+- recent HID events and timestamps
+- device names, vendors, products, and hardware IDs
+- detection result, action taken, and reason
+- trusted whitelist entries
+- summary counts for trusted/safe/untrusted/blocked events
+- **Dynamic features**: auto-refreshes every 10 seconds, countdown timer, playful animations, and hover effects
 
 ---
 
