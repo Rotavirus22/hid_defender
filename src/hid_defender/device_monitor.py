@@ -5,7 +5,12 @@
 import subprocess
 import json
 from datetime import datetime
-from .config import IS_WINDOWS, IS_MACOS, IS_LINUX
+
+# Handle both package imports and standalone execution
+try:
+    from .config import IS_WINDOWS, IS_MACOS, IS_LINUX
+except ImportError:
+    from config import IS_WINDOWS, IS_MACOS, IS_LINUX
 
 
 def get_macos_usb_devices():
@@ -32,28 +37,29 @@ def _parse_macos_usb_item(item, parent_path):
     current_path = parent_path + [item.get("_name", "Unknown")]
     
     # Check if this item is a USB device (has vendor/product info)
+    name = item.get("_name", "Unknown")
+    vendor = item.get("manufacturer", "Unknown")
+    product = item.get("product_name", name)
+    
+    # Extract VID/PID if available
+    vid = item.get("vendor_id", "").replace("0x", "").upper()
+    pid = item.get("product_id", "").replace("0x", "").upper()
+    hw_id = f"VID_{vid}PID_{pid}" if vid and pid else name
+    
+    # If this item has device info, add it
+    if vendor != "Unknown" or "USB" in str(current_path) or vid or pid:
+        devices.append({
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "name": product,
+            "vendor": vendor,
+            "product": product,
+            "id": hw_id
+        })
+    
+    # Recurse into subitems if they exist
     if "_items" in item:
         for subitem in item["_items"]:
             devices.extend(_parse_macos_usb_item(subitem, current_path))
-    else:
-        # This is likely a leaf device
-        name = item.get("_name", "Unknown")
-        vendor = item.get("manufacturer", "Unknown")
-        product = item.get("product_name", name)
-        
-        # Extract VID/PID if available
-        vid = item.get("vendor_id", "")
-        pid = item.get("product_id", "")
-        hw_id = f"VID_{vid}PID_{pid}" if vid and pid else name
-        
-        if vendor != "Unknown" or "USB" in str(current_path):
-            devices.append({
-                "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "name": product,
-                "vendor": vendor,
-                "product": product,
-                "id": hw_id
-            })
     
     return devices
 

@@ -6,7 +6,12 @@ import time
 import io
 import contextlib
 from collections import deque
-from .config import IS_MACOS, IS_WINDOWS, KEYSTROKE_THRESHOLD, FIRST_INPUT_DELAY_THRESHOLD, MALICIOUS_PATTERNS
+
+# Handle both package imports and standalone execution
+try:
+    from .config import IS_MACOS, IS_WINDOWS, KEYSTROKE_THRESHOLD, FIRST_INPUT_DELAY_THRESHOLD, MALICIOUS_PATTERNS
+except ImportError:
+    from config import IS_MACOS, IS_WINDOWS, KEYSTROKE_THRESHOLD, FIRST_INPUT_DELAY_THRESHOLD, MALICIOUS_PATTERNS
 
 # Keystroke monitoring
 try:

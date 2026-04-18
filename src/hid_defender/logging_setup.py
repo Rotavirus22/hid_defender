@@ -6,7 +6,12 @@ import logging
 import csv
 import os
 import sys
-from .config import LOG_PATH
+
+# Handle both package imports and standalone execution
+try:
+    from .config import LOG_PATH
+except ImportError:
+    from config import LOG_PATH
 
 class CSVLogFormatter(logging.Formatter):
     """Custom formatter to keep our audit log in CSV format."""

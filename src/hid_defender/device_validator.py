@@ -7,11 +7,21 @@ import re
 import json
 import time
 from datetime import datetime
-from .config import (
-    WHITELIST_PATH, ATTACK_VECTORS, BIG_BRANDS, 
-    SUSPICIOUS_MAPPING, RECENT_SEEN
-)
-from .device_monitor import get_macos_usb_devices
+
+# Handle both package imports and standalone execution
+try:
+    from .config import (
+        WHITELIST_PATH, ATTACK_VECTORS, BIG_BRANDS,
+        SUSPICIOUS_MAPPING, RECENT_SEEN
+    )
+    from .device_monitor import get_macos_usb_devices
+except ImportError:
+    # Fallback for testing or standalone execution
+    from config import (
+        WHITELIST_PATH, ATTACK_VECTORS, BIG_BRANDS,
+        SUSPICIOUS_MAPPING, RECENT_SEEN
+    )
+    from device_monitor import get_macos_usb_devices
 
 HWID_RE = re.compile(r"(VID_[0-9A-F]{4}).*(PID_[0-9A-F]{4})")
 
@@ -136,10 +146,15 @@ def parse_device(dev_info):
 
 def evaluate(info, whitelist):
     """Analyzes a new connection for suspicious traits."""
-    raw_id = normalize_hardware_id(info['id'])
-    v_low = info['vendor'].lower()
-    p_low = info['product'].lower()
-    n_low = info['name'].lower()
+    # Handle both 'id' (from device_monitor) and 'hardware_id' (from fixtures)
+    device_id = info.get('id') or info.get('hardware_id')
+    if not device_id:
+        return "UNKNOWN", "ALLOW", "No device ID available"
+    
+    raw_id = normalize_hardware_id(device_id)
+    v_low = info.get('vendor', '').lower()
+    p_low = info.get('product', info.get('description', info.get('name', ''))).lower()
+    n_low = info.get('name', info.get('description', info.get('product', ''))).lower()
 
     # Step 1: Check blacklisted hardware IDs for known attack vectors
     for bad_vid in ATTACK_VECTORS:

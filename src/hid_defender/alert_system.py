@@ -5,14 +5,28 @@
 import subprocess
 import threading
 import platform
-from .config import IS_WINDOWS, IS_MACOS, IS_LINUX
+
+# Handle both package imports and standalone execution
+try:
+    from .config import IS_WINDOWS, IS_MACOS, IS_LINUX
+except ImportError:
+    from config import IS_WINDOWS, IS_MACOS, IS_LINUX
+
+# Import platform-specific modules at module level for patching
+import ctypes
+if IS_WINDOWS:
+    try:
+        import winsound
+    except ImportError:
+        winsound = None
+else:
+    winsound = None
 
 
 def play_alert_sound():
     """Play a system alert sound based on platform."""
-    if IS_WINDOWS:
+    if IS_WINDOWS and winsound:
         try:
-            import winsound
             winsound.Beep(1000, 400)
             winsound.Beep(1000, 400)
         except:
@@ -31,10 +45,9 @@ def play_alert_sound():
 
 def show_alert(info):
     """Shows a loud, modal security warning to the user."""
-    if IS_WINDOWS:
+    if IS_WINDOWS and ctypes:
         def _popup():
             try:
-                import ctypes
                 title = "SECURE HID DEFENDER: THREAT DETECTED"
                 msg = (
                     "!!! UNAUTHORIZED USB DEVICE DETECTED !!!\n\n"
@@ -77,11 +90,11 @@ def show_alert(info):
 
 def lock_workstation():
     """Lock the workstation (Windows only)."""
-    if IS_WINDOWS:
+    if IS_WINDOWS and ctypes:
         try:
-            import ctypes
             ctypes.windll.user32.LockWorkStation()
             return True
         except:
             return False
-    return False
+    else:
+        raise NotImplementedError("Workstation locking is only supported on Windows")
