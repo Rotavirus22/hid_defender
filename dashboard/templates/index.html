@@ -2,110 +2,122 @@
 
 {% block content %}
 <section class="container">
-    <div class="row">
-        <div class="col-sm-12">
-            <h2>🛡️ Overview</h2>
-            <p>Shows recent device events, suspicious detections, timing analysis, and whitelist status. <span id="countdown">Next refresh in 10s</span></p>
-        </div>
-    </div>
-
-    <div class="row cards">
-        <div class="card bounce">
+    <!-- Summary Stats Cards (Top) -->
+    <div class="summary-stats" id="stats-cards">
+        <div class="stat-box" id="stat-total">
             <h3>📊 Total Events</h3>
-            <p>{{ summary.total_events }}</p>
+            <p class="stat-number">{{ summary.total_events }}</p>
         </div>
-        <div class="card success bounce">
+        <div class="stat-box success" id="stat-trusted">
             <h3>✅ Trusted</h3>
-            <p>{{ summary.trusted }}</p>
+            <p class="stat-number">{{ summary.trusted }}</p>
         </div>
-        <div class="card info bounce">
+        <div class="stat-box info" id="stat-safe">
             <h3>ℹ️ Safe</h3>
-            <p>{{ summary.safe }}</p>
+            <p class="stat-number">{{ summary.safe }}</p>
         </div>
-        <div class="card warning bounce">
+        <div class="stat-box warning" id="stat-untrusted">
             <h3>⚠️ Untrusted</h3>
-            <p>{{ summary.untrusted }}</p>
+            <p class="stat-number">{{ summary.untrusted }}</p>
         </div>
-        <div class="card danger bounce">
+        <div class="stat-box danger" id="stat-blocked">
             <h3>🚫 Blocked</h3>
-            <p>{{ summary.blocked }}</p>
+            <p class="stat-number">{{ summary.blocked }}</p>
         </div>
-        <div class="card bounce">
+        <div class="stat-box" id="stat-disabled">
             <h3>🔒 Disabled</h3>
-            <p>{{ summary.disabled }}</p>
+            <p class="stat-number">{{ summary.disabled }}</p>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-sm-8">
-            <section class="card">
-                <h3>📅 Recent Events</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Device</th>
-                            <th>Vendor</th>
-                            <th>Product</th>
-                            <th>ID</th>
-                            <th>Result</th>
-                            <th>Action</th>
-                            <th>Reason</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in rows[:40] %}
-                        <tr class="{{ row.Result|lower if row.Result else '' }} fade-in">
-                            <td>{{ row.parsed_time.strftime('%Y-%m-%d %H:%M:%S') if row.parsed_time else row.Time }}</td>
-                            <td>{{ row.Device }}</td>
-                            <td>{{ row.Vendor }}</td>
-                            <td>{{ row.Product }}</td>
-                            <td>{{ row.ID }}</td>
-                            <td>{{ row.Result }}</td>
-                            <td>{{ row.Action }}</td>
-                            <td>{{ row.Reason }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </section>
+    <!-- Monitoring & Events Section -->
+    <div class="monitoring-header">
+        <h2>🔍 Monitoring & Events</h2>
+    </div>
+
+    <div class="monitoring-grid">
+        <!-- Alert Panel -->
+        <div class="panel alert-panel">
+            <h3>⚠️ Alert Panel (<span id="alert-count">0</span>)</h3>
+            <div class="alerts-list" id="alerts-list">
+                <p class="no-data">Loading alerts...</p>
+            </div>
         </div>
-        <div class="col-sm-4">
-            <section class="card">
-                <h3>⏱️ Timing & Stats</h3>
-                <p><strong>Last Event:</strong> {{ summary.last_event.strftime('%Y-%m-%d %H:%M:%S') if summary.last_event else 'N/A' }}</p>
-                <p><strong>Unique Devices:</strong> {{ summary.unique_devices }}</p>
-                <p><strong>Average Event Interval:</strong> {{ '%.1f seconds'|format(summary.average_interval) if summary.average_interval else 'N/A' }}</p>
-                <h4>Top Reasons</h4>
-                <ul>
-                    {% for reason, count in summary.reasons.items()|sort(attribute='1', reverse=True) %}
-                    <li>{{ reason }} — {{ count }}</li>
-                    {% endfor %}
-                </ul>
-            </section>
-            <section class="card">
-                <h3>🔐 Trusted Devices</h3>
+
+        <!-- Activity Logs -->
+        <div class="panel activity-panel">
+            <h3>📋 Activity Logs</h3>
+            <div class="logs-list" id="activity-list">
+                <p class="no-data">Loading activity...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Monitoring Panel -->
+    <div class="device-panel-header">
+        <h2>📱 Device Monitoring Panel</h2>
+    </div>
+
+    <div class="devices-grid" id="devices-grid">
+        <p class="no-data">Loading devices...</p>
+    </div>
+
+    <!-- Recent Events Table -->
+    <div class="events-section">
+        <h2>📅 Recent Events</h2>
+        <div class="table-controls">
+            <input type="text" id="event-filter" placeholder="🔍 Filter events..." class="filter-input">
+            <select id="result-filter" class="filter-select">
+                <option value="">All Results</option>
+                <option value="trusted">Trusted</option>
+                <option value="safe">Safe</option>
+                <option value="untrusted">Untrusted</option>
+            </select>
+        </div>
+        <table class="events-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Device</th>
+                    <th>Vendor</th>
+                    <th>Product</th>
+                    <th>ID</th>
+                    <th>Result</th>
+                    <th>Action</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody id="events-tbody">
+                <tr><td colspan="8" class="no-data">Loading events...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>⏱️ Timing & Stats</h3>
+            <p><strong>Last Event:</strong> <span id="last-event-time">N/A</span></p>
+            <p><strong>Unique Devices:</strong> <span id="unique-devices">0</span></p>
+            <p><strong>Average Event Interval:</strong> <span id="avg-interval">N/A</span></p>
+            <h4>Top Reasons</h4>
+            <ul id="top-reasons">
+                <li>Loading...</li>
+            </ul>
+        </div>
+        <div class="stat-card">
+            <h3>🔐 Trusted Devices</h3>
+            <ul class="trusted-list" id="trusted-list">
                 {% if whitelist %}
-                <ul>
                     {% for device in whitelist %}
                     <li><strong>{{ device.vendor }}</strong> — {{ device.name }}<br /><small>{{ device.hardware_id }}</small></li>
                     {% endfor %}
-                </ul>
                 {% else %}
-                <p>No trusted devices configured yet.</p>
+                <li>No trusted devices configured yet.</li>
                 {% endif %}
-            </section>
+            </ul>
         </div>
     </div>
 </section>
 
-<script>
-    let countdown = 10;
-    const countdownEl = document.getElementById('countdown');
-    setInterval(() => {
-        countdown--;
-        countdownEl.textContent = `Next refresh in ${countdown}s`;
-        if (countdown <= 0) countdown = 10;
-    }, 1000);
-</script>
 {% endblock %}
