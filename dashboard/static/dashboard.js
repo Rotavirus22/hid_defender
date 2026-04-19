@@ -1,25 +1,53 @@
 /**
  * HID Defender Dashboard - Dynamic Update Engine
- * Handles real-time updates, auto-refresh, filtering, and UI animations
+ * Handles real-time updates, auto-refresh, filtering, UI animations, and test execution
  */
 
 class DashboardUpdater {
     constructor() {
         this.updateCount = 0;
-        this.autoRefreshEnabled = true;
-        this.refreshInterval = 3000; // 3 seconds
         this.eventFilter = '';
         this.resultFilter = '';
-        this.lastUpdateTime = null;
+        this.allEvents = [];
+        this.testsLoaded = false;
         
         this.init();
     }
 
     init() {
+        this.setupNavigation();
         this.setupEventListeners();
-        this.startAutoRefresh();
+        this.refreshAll();
         this.updateClock();
         setInterval(() => this.updateClock(), 1000);
+    }
+
+    setupNavigation() {
+        const navItems = document.querySelectorAll('.nav-item');
+        const sections = document.querySelectorAll('.section');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = item.getAttribute('data-section');
+                
+                // Update nav items
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Update sections
+                sections.forEach(sec => sec.classList.remove('active'));
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+                
+                // Load tests if we navigate to the tests section
+                if (targetId === 'tests' && !this.testsLoaded) {
+                    this.loadTests();
+                }
+            });
+        });
     }
 
     setupEventListeners() {
@@ -29,10 +57,10 @@ class DashboardUpdater {
             refreshBtn.addEventListener('click', () => this.refreshAll());
         }
 
-        // Auto-refresh toggle
-        const autoToggle = document.getElementById('auto-refresh-toggle');
-        if (autoToggle) {
-            autoToggle.addEventListener('click', () => this.toggleAutoRefresh(autoToggle));
+        // Simulate Attack button
+        const simulateBtn = document.getElementById('simulate-attack-btn');
+        if (simulateBtn) {
+            simulateBtn.addEventListener('click', () => this.simulateAttack(simulateBtn));
         }
 
         // Event filter
@@ -54,21 +82,102 @@ class DashboardUpdater {
         }
     }
 
-    startAutoRefresh() {
-        this.refreshAll();
-        this.autoRefreshInterval = setInterval(() => {
-            if (this.autoRefreshEnabled) {
-                this.refreshAll();
-            }
-        }, this.refreshInterval);
-    }
+    simulateAttack(btnElement) {
+        const modal = document.getElementById('simulation-modal');
+        const modalBody = document.getElementById('simulation-body');
+        const closeBtn = document.getElementById('close-simulation-btn');
+        
+        if (!modal || !modalBody) return;
+        
+        // Setup Modal UI
+        modal.classList.remove('hidden');
+        modalBody.innerHTML = '<p style="text-align: center; color: var(--text-muted);">Initializing attack vectors...</p>';
+        closeBtn.classList.add('hidden');
+        
+        // Reset button
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = '⏳ Simulating...';
+        btnElement.disabled = true;
 
-    toggleAutoRefresh(btn) {
-        this.autoRefreshEnabled = !this.autoRefreshEnabled;
-        if (btn) {
-            btn.textContent = this.autoRefreshEnabled ? '⏸ Auto-Refresh ON' : '▶ Auto-Refresh OFF';
-            btn.classList.toggle('button-active', this.autoRefreshEnabled);
-        }
+        fetch('/api/simulate_attack', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.attacks) {
+                    modalBody.innerHTML = ''; // Clear initializing text
+                    let delay = 0;
+                    
+                    data.attacks.forEach((attack, index) => {
+                        setTimeout(() => {
+                            // Show attack coming in
+                            const eventDiv = document.createElement('div');
+                            eventDiv.className = 'sim-event';
+                            eventDiv.innerHTML = `
+                                <div class="sim-event-title">🔥 Attack Vector: ${attack.Device}</div>
+                                <div class="sim-event-detail">Target: ${attack.Event} | ID: ${attack.ID}</div>
+                                <div class="sim-event-detail" style="color: var(--warning);">Status: Analyzing threat...</div>
+                            `;
+                            modalBody.appendChild(eventDiv);
+                            modalBody.scrollTop = modalBody.scrollHeight;
+                            
+                            // Simulate Defense response after a short delay
+                            setTimeout(() => {
+                                const actionColor = attack.Action === 'BLOCKED' ? 'danger' : 'warning';
+                                eventDiv.innerHTML = `
+                                    <div class="sim-event-title">🔥 Attack Vector: ${attack.Device}</div>
+                                    <div class="sim-event-detail">Target: ${attack.Event} | ID: ${attack.ID}</div>
+                                    <div class="sim-event-defense ${actionColor}">
+                                        🛡️ System Defense: ${attack.Action} - ${attack.Reason}
+                                    </div>
+                                `;
+                            }, 800);
+                            
+                        }, delay);
+                        delay += 1500; // Stagger each attack
+                    });
+                    
+                    // After all attacks have run
+                    setTimeout(() => {
+                        this.refreshAll();
+                        closeBtn.classList.remove('hidden');
+                        closeBtn.textContent = 'View Defense Logs →';
+                        closeBtn.onclick = () => {
+                            modal.classList.add('hidden');
+                            document.querySelector('[data-section="logs"]').click();
+                            
+                            // Optionally pre-fill search filter to show these events
+                            const filterInput = document.getElementById('event-filter');
+                            if (filterInput) {
+                                filterInput.value = 'BLOCKED';
+                                filterInput.dispatchEvent(new Event('input'));
+                            }
+                        };
+                        
+                        btnElement.innerHTML = '✓ Simulation Complete';
+                        btnElement.style.background = 'var(--success)';
+                        setTimeout(() => {
+                            btnElement.innerHTML = originalText;
+                            btnElement.disabled = false;
+                            btnElement.style.background = 'var(--danger)';
+                        }, 3000);
+                        
+                    }, delay + 500);
+                    
+                } else {
+                    modalBody.innerHTML = `<p style="color: var(--danger); text-align: center;">Error: ${data.error}</p>`;
+                    closeBtn.classList.remove('hidden');
+                    closeBtn.textContent = 'Close';
+                    closeBtn.onclick = () => modal.classList.add('hidden');
+                    btnElement.innerHTML = '❌ Error';
+                }
+            })
+            .catch(err => {
+                modalBody.innerHTML = `<p style="color: var(--danger); text-align: center;">Fetch Error: ${err}</p>`;
+                closeBtn.classList.remove('hidden');
+                closeBtn.textContent = 'Close';
+                closeBtn.onclick = () => modal.classList.add('hidden');
+                btnElement.innerHTML = '❌ Error';
+                console.error("Fetch error:", err);
+            });
     }
 
     refreshAll() {
@@ -89,7 +198,7 @@ class DashboardUpdater {
         const timeStr = now.toLocaleTimeString();
         const updateCountEl = document.getElementById('update-count');
         
-        statusEl.innerHTML = `Status: <span class="status-active">Active</span> | Time: ${timeStr} | Updates: <span id="update-count">${this.updateCount}</span>`;
+        statusEl.innerHTML = `<span class="status-active"></span>Active | Updates: <span id="update-count">${this.updateCount}</span> | Last refresh: ${timeStr}`;
     }
 
     updateStats() {
@@ -102,30 +211,6 @@ class DashboardUpdater {
                 this.updateStatCard('stat-untrusted', data.untrusted);
                 this.updateStatCard('stat-blocked', data.blocked);
                 this.updateStatCard('stat-disabled', data.disabled);
-
-                // Update timing stats
-                const lastEventEl = document.getElementById('last-event-time');
-                if (lastEventEl) {
-                    lastEventEl.textContent = data.last_event ? new Date(data.last_event).toLocaleTimeString() : 'N/A';
-                }
-
-                const uniqueEl = document.getElementById('unique-devices');
-                if (uniqueEl) {
-                    uniqueEl.textContent = data.unique_devices;
-                }
-
-                const avgEl = document.getElementById('avg-interval');
-                if (avgEl) {
-                    avgEl.textContent = data.average_interval ? `${data.average_interval.toFixed(1)}s` : 'N/A';
-                }
-
-                // Update top reasons
-                const reasonsList = document.getElementById('top-reasons');
-                if (reasonsList && data.top_reasons) {
-                    reasonsList.innerHTML = data.top_reasons
-                        .map(r => `<li>${r.reason} — <strong>${r.count}</strong></li>`)
-                        .join('');
-                }
 
                 this.updateCount++;
                 this.updateClock();
@@ -151,26 +236,27 @@ class DashboardUpdater {
             .then(res => res.json())
             .then(data => {
                 const alertsList = document.getElementById('alerts-list');
+                const alertsFullList = document.getElementById('alerts-full-list');
                 const alertCount = document.getElementById('alert-count');
                 
                 if (alertCount) {
                     alertCount.textContent = data.total;
                 }
 
-                if (!alertsList) return;
+                if (!alertsList && !alertsFullList) return;
 
-                if (data.alerts.length === 0) {
-                    alertsList.innerHTML = '<p class="no-data">✓ No alerts detected</p>';
-                    return;
-                }
+                const html = data.alerts.length === 0 ? 
+                    '<p class="no-data">✓ No alerts detected</p>' : 
+                    data.alerts.map(alert => `
+                        <div class="alert-item fade-in">
+                            <p class="alert-time">${new Date(alert.time).toLocaleTimeString()}</p>
+                            <p class="alert-title">${alert.reason}</p>
+                            <p class="alert-device">${alert.vendor || 'Unknown'} - ${alert.device || 'Unknown'}</p>
+                        </div>
+                    `).join('');
 
-                alertsList.innerHTML = data.alerts.map(alert => `
-                    <div class="alert-item pulse">
-                        <p class="alert-time">${new Date(alert.time).toLocaleTimeString()}</p>
-                        <p class="alert-title">${alert.reason}</p>
-                        <p class="alert-device">${alert.vendor || 'Unknown'} - ${alert.device || 'Unknown'}</p>
-                    </div>
-                `).join('');
+                if (alertsList) alertsList.innerHTML = html;
+                if (alertsFullList) alertsFullList.innerHTML = html;
             });
     }
 
@@ -186,12 +272,17 @@ class DashboardUpdater {
                     return;
                 }
 
-                activityList.innerHTML = data.activity.map(log => `
-                    <div class="log-item fade-in">
+                activityList.innerHTML = data.activity.map(log => {
+                    let logClass = 'safe';
+                    if (log.result === 'UNTRUSTED') logClass = 'danger';
+                    else if (log.result === 'TRUSTED') logClass = 'trusted';
+                    
+                    return `
+                    <div class="log-item ${logClass} fade-in">
                         <p class="log-time">${new Date(log.time).toLocaleTimeString()}</p>
-                        <p class="log-content"><strong>${log.action}</strong>: ${log.device}</p>
+                        <p class="log-content"><strong>${log.action}</strong>: ${log.device || 'Unknown Device'}</p>
                     </div>
-                `).join('');
+                `}).join('');
             });
     }
 
@@ -210,16 +301,16 @@ class DashboardUpdater {
                 devicesGrid.innerHTML = data.devices.map((device, idx) => {
                     const statusClass = device.status.toLowerCase();
                     return `
-                        <div class="device-card bounce">
-                            <h4>Device ${idx + 1}</h4>
-                            <p><strong>Type:</strong> ${device.type || 'Unknown'}</p>
-                            <p><strong>Vendor:</strong> ${device.vendor || 'Unknown'}</p>
-                            <p><strong>Product:</strong> ${device.product || 'Unknown'}</p>
-                            <p class="device-status">
-                                Status: <span class="status-badge ${statusClass}">${device.status}</span>
+                        <div class="stat-box fade-in">
+                            <h4 style="color: #fff; margin-bottom: 0.8rem; font-size: 1.1rem;">Device: <code>${device.id}</code></h4>
+                            <p style="color: var(--text-muted); margin-bottom: 0.4rem;"><strong>Type:</strong> ${device.type || 'Unknown'}</p>
+                            <p style="color: var(--text-muted); margin-bottom: 0.4rem;"><strong>Vendor:</strong> ${device.vendor || 'Unknown'}</p>
+                            <p style="color: var(--text-muted); margin-bottom: 0.4rem;"><strong>Product:</strong> ${device.product || 'Unknown'}</p>
+                            <p class="device-status" style="margin-top: 1rem; margin-bottom: 0.5rem;">
+                                <span class="badge ${statusClass}">${device.status}</span>
                             </p>
-                            <p><strong>Events:</strong> ${device.event_count}</p>
-                            <p class="last-activity">
+                            <p style="color: var(--text-muted); font-size: 0.85rem;">Events: ${device.event_count}</p>
+                            <p class="last-activity" style="margin-top: 0.5rem;">
                                 Last Activity: ${device.last_activity ? new Date(device.last_activity).toLocaleTimeString() : 'N/A'}
                             </p>
                         </div>
@@ -266,7 +357,7 @@ class DashboardUpdater {
 
         // Render filtered events
         if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="no-data">No events match filters</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="no-data" style="text-align: center;">No events match filters</td></tr>';
             return;
         }
 
@@ -274,13 +365,13 @@ class DashboardUpdater {
             const resultClass = (event.result || '').toLowerCase();
             const timeStr = new Date(event.time).toLocaleTimeString();
             return `
-                <tr class="${resultClass} fade-in">
+                <tr class="${resultClass}">
                     <td>${timeStr}</td>
                     <td>${event.device || '-'}</td>
                     <td>${event.vendor || '-'}</td>
                     <td>${event.product || '-'}</td>
                     <td><code>${event.id || '-'}</code></td>
-                    <td><strong>${event.result || '-'}</strong></td>
+                    <td><span class="badge ${resultClass}">${event.result || '-'}</span></td>
                     <td>${event.action || '-'}</td>
                     <td>${event.reason || '-'}</td>
                 </tr>
@@ -288,14 +379,142 @@ class DashboardUpdater {
         }).join('');
     }
 
+    loadTests() {
+        const testsList = document.getElementById('tests-list');
+        if (!testsList) return;
+
+        testsList.innerHTML = '<p class="no-data">Fetching tests...</p>';
+
+        fetch('/api/tests')
+            .then(res => res.json())
+            .then(data => {
+                this.testsLoaded = true;
+                
+                if (data.tests.length === 0) {
+                    testsList.innerHTML = '<p class="no-data">No test cases found</p>';
+                    return;
+                }
+
+                testsList.innerHTML = data.tests.map(test => `
+                    <div class="test-item fade-in">
+                        <div class="test-info">
+                            <h4>${test.name}</h4>
+                            <p>${test.file}</p>
+                        </div>
+                        <button class="button run-test-btn" data-testid="${test.id}">
+                            ▶ Execute
+                        </button>
+                    </div>
+                `).join('');
+
+                // Add listeners to new buttons
+                document.querySelectorAll('.run-test-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const testId = e.currentTarget.getAttribute('data-testid');
+                        this.executeTest(testId, e.currentTarget);
+                    });
+                });
+            })
+            .catch(err => {
+                testsList.innerHTML = `<p class="no-data" style="color: var(--danger)">Error loading tests: ${err.message}</p>`;
+            });
+    }
+
+    executeTest(testId, btnElement) {
+        const resultsBox = document.getElementById('test-execution-results');
+        if (!resultsBox) return;
+
+        // Visual feedback on button
+        const originalText = btnElement.innerHTML;
+        btnElement.innerHTML = '⌛ Running...';
+        btnElement.disabled = true;
+        btnElement.style.opacity = '0.7';
+
+        // Set up results box
+        const testName = testId.split('::').pop();
+        resultsBox.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Running: ${testName}</h3>
+                <span class="test-badge" style="background: rgba(255, 255, 255, 0.1); color: #fff;">In Progress</span>
+            </div>
+            <div class="test-output">Executing test suite...</div>
+        `;
+
+        fetch('/api/tests/run', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ test_id: testId })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const passed = data.result.passed;
+            const rawOutput = data.result.stdout + '\n' + data.result.stderr;
+            
+            let cleanOutput = "";
+            if (passed) {
+                cleanOutput = "The test executed successfully. All system checks and assertions passed.";
+            } else {
+                // Extract error lines without showing file paths
+                const lines = rawOutput.split('\n');
+                const errorLines = lines.filter(line => 
+                    line.startsWith('E ') || 
+                    line.includes('AssertionError') || 
+                    line.includes('Exception:') ||
+                    (line.includes('FAILED') && !line.includes('='))
+                );
+                
+                if (errorLines.length > 0) {
+                    cleanOutput = "The test failed due to the following errors:\n\n" + 
+                        errorLines.map(l => "• " + l.replace(/^E\s+/, '').replace(/^.*\.py:\d+:\s*/, '')).join('\n');
+                } else {
+                    cleanOutput = "The test failed during execution. Please review the system logs for detailed information.";
+                }
+            }
+            
+            const badgeClass = passed ? 'passed' : 'failed';
+            const badgeText = passed ? '✓ Passed' : '✗ Failed';
+            
+            resultsBox.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <h3 style="margin: 0;">${testName}</h3>
+                    <span class="test-badge ${badgeClass}">${badgeText}</span>
+                </div>
+                <div class="test-output ${passed ? '' : 'error'}">${this.escapeHtml(cleanOutput)}</div>
+            `;
+        })
+        .catch(err => {
+            resultsBox.innerHTML = `
+                <h3 style="color: var(--danger); margin-bottom: 1rem;">Error Running Test</h3>
+                <div class="test-output error">${err.message}</div>
+            `;
+        })
+        .finally(() => {
+            // Restore button
+            btnElement.innerHTML = originalText;
+            btnElement.disabled = false;
+            btnElement.style.opacity = '1';
+        });
+    }
+
     animateUpdate(element) {
-        element.classList.add('highlight');
-        setTimeout(() => element.classList.remove('highlight'), 600);
+        element.style.color = 'var(--accent-blue)';
+        setTimeout(() => element.style.color = '', 600);
+    }
+    
+    escapeHtml(unsafe) {
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
     }
 }
 
 // Initialize dashboard when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboard = new DashboardUpdater();
-    console.log('✓ Dashboard initialized');
+    console.log('✓ Premium Dashboard initialized');
 });

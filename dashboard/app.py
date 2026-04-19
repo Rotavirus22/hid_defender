@@ -50,11 +50,17 @@ def run_test(test_id):
     """Run a specific test and capture output."""
     module_name, test_name = test_id.split("::")
     test_path = f"tests/{module_name}.py"
-    test_spec = f"{test_path}::{test_name}"
     
+    # Try to find the virtualenv pytest first, fallback to sys.executable -m pytest
+    venv_pytest = project_root / ".venv" / "bin" / "pytest"
+    if venv_pytest.exists():
+        pytest_cmd = [str(venv_pytest)]
+    else:
+        pytest_cmd = [sys.executable, "-m", "pytest"]
+        
     try:
         result = subprocess.run(
-            [sys.executable, "-m", "pytest", test_spec, "-v", "--tb=short"],
+            pytest_cmd + [test_path, "-k", test_name, "-v", "--tb=short"],
             cwd=project_root,
             capture_output=True,
             text=True,
@@ -383,6 +389,30 @@ def api_run_test():
         "result": result,
         "timestamp": datetime.now().isoformat()
     })
+
+
+@app.route("/api/simulate_attack", methods=["POST"])
+def api_simulate_attack():
+    """API endpoint to trigger the attack simulation script."""
+    try:
+        script_path = project_root / "scripts" / "simulate_attacks.py"
+        result = subprocess.run(
+            [sys.executable, str(script_path)],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if result.returncode == 0:
+            import json
+            try:
+                attacks_data = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                attacks_data = []
+            return jsonify({"success": True, "message": "Attacks simulated successfully", "attacks": attacks_data})
+        else:
+            return jsonify({"success": False, "error": result.stderr}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":
