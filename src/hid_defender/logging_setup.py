@@ -6,12 +6,13 @@ import logging
 import csv
 import os
 import sys
+from typing import Optional
 
 # Handle both package imports and standalone execution
 try:
     from .config import LOG_PATH
 except ImportError:
-    from config import LOG_PATH
+    from config import LOG_PATH  # type: ignore
 
 class CSVLogFormatter(logging.Formatter):
     """Custom formatter to keep our audit log in CSV format."""
@@ -29,10 +30,15 @@ class CSVLogFormatter(logging.Formatter):
         return super().format(record)
 
 
-def init_logger():
-    """Sets up unified logging for both console and CSV audit log."""
+def init_logger(log_level: str = "INFO"):
+    """Sets up unified logging for both console and CSV audit log.
+    
+    Args:
+        log_level: Logging level (DEBUG, INFO, WARNING, ERROR). Default: INFO
+    """
     logger = logging.getLogger("HID_Defender")
-    logger.setLevel(logging.INFO)
+    level = getattr(logging, log_level.upper(), logging.INFO)
+    logger.setLevel(level)
     
     # Remove any existing handlers
     for handler in logger.handlers[:]:

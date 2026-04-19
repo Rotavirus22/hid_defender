@@ -1,44 +1,42 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<section class="container">
-    <!-- Summary Stats Cards (Top) -->
+<!-- Dashboard Section -->
+<section class="section active" id="dashboard">
+    <h2>📊 Dashboard Overview</h2>
+    
+    <!-- Summary Stats Cards -->
     <div class="summary-stats" id="stats-cards">
         <div class="stat-box" id="stat-total">
-            <h3>📊 Total Events</h3>
+            <h3>Total Events</h3>
             <p class="stat-number">{{ summary.total_events }}</p>
         </div>
         <div class="stat-box success" id="stat-trusted">
-            <h3>✅ Trusted</h3>
+            <h3>Trusted</h3>
             <p class="stat-number">{{ summary.trusted }}</p>
         </div>
         <div class="stat-box info" id="stat-safe">
-            <h3>ℹ️ Safe</h3>
+            <h3>Safe</h3>
             <p class="stat-number">{{ summary.safe }}</p>
         </div>
         <div class="stat-box warning" id="stat-untrusted">
-            <h3>⚠️ Untrusted</h3>
+            <h3>Untrusted</h3>
             <p class="stat-number">{{ summary.untrusted }}</p>
         </div>
         <div class="stat-box danger" id="stat-blocked">
-            <h3>🚫 Blocked</h3>
+            <h3>Blocked</h3>
             <p class="stat-number">{{ summary.blocked }}</p>
         </div>
         <div class="stat-box" id="stat-disabled">
-            <h3>🔒 Disabled</h3>
+            <h3>Disabled</h3>
             <p class="stat-number">{{ summary.disabled }}</p>
         </div>
-    </div>
-
-    <!-- Monitoring & Events Section -->
-    <div class="monitoring-header">
-        <h2>🔍 Monitoring & Events</h2>
     </div>
 
     <div class="monitoring-grid">
         <!-- Alert Panel -->
         <div class="panel alert-panel">
-            <h3>⚠️ Alert Panel (<span id="alert-count">0</span>)</h3>
+            <h3>⚠️ Active Alerts (<span id="alert-count">0</span>)</h3>
             <div class="alerts-list" id="alerts-list">
                 <p class="no-data">Loading alerts...</p>
             </div>
@@ -46,76 +44,100 @@
 
         <!-- Activity Logs -->
         <div class="panel activity-panel">
-            <h3>📋 Activity Logs</h3>
+            <h3>📋 Recent Activity</h3>
             <div class="logs-list" id="activity-list">
                 <p class="no-data">Loading activity...</p>
             </div>
         </div>
     </div>
+</section>
 
-    <!-- Device Monitoring Panel -->
-    <div class="device-panel-header">
-        <h2>📱 Device Monitoring Panel</h2>
+<!-- Devices Section -->
+<section class="section" id="devices">
+    <h2>📱 Device Management</h2>
+    <div class="panel">
+        <div class="devices-grid" id="devices-grid">
+            <p class="no-data">Loading devices...</p>
+        </div>
     </div>
+</section>
 
-    <div class="devices-grid" id="devices-grid">
-        <p class="no-data">Loading devices...</p>
+<!-- Alerts Section -->
+<section class="section" id="alerts">
+    <h2>⚠️ All Security Alerts</h2>
+    <div class="panel">
+        <div class="alerts-list full-width" id="alerts-full-list">
+            <p class="no-data">Loading alerts...</p>
+        </div>
     </div>
+</section>
 
-    <!-- Recent Events Table -->
-    <div class="events-section">
-        <h2>📅 Recent Events</h2>
-        <div class="table-controls">
-            <input type="text" id="event-filter" placeholder="🔍 Filter events..." class="filter-input">
-            <select id="result-filter" class="filter-select">
+<!-- Logs Section -->
+<section class="section" id="logs">
+    <h2>📋 Detailed Event Logs</h2>
+    <div class="panel">
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+            <input type="text" id="event-filter" placeholder="🔍 Search devices, vendors, or reasons..." style="flex: 1;" />
+            <select id="result-filter" style="width: 200px;">
                 <option value="">All Results</option>
                 <option value="trusted">Trusted</option>
                 <option value="safe">Safe</option>
                 <option value="untrusted">Untrusted</option>
             </select>
         </div>
-        <table class="events-table">
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Device</th>
-                    <th>Vendor</th>
-                    <th>Product</th>
-                    <th>ID</th>
-                    <th>Result</th>
-                    <th>Action</th>
-                    <th>Reason</th>
-                </tr>
-            </thead>
-            <tbody id="events-tbody">
-                <tr><td colspan="8" class="no-data">Loading events...</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Stats Section -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>⏱️ Timing & Stats</h3>
-            <p><strong>Last Event:</strong> <span id="last-event-time">N/A</span></p>
-            <p><strong>Unique Devices:</strong> <span id="unique-devices">0</span></p>
-            <p><strong>Average Event Interval:</strong> <span id="avg-interval">N/A</span></p>
-            <h4>Top Reasons</h4>
-            <ul id="top-reasons">
-                <li>Loading...</li>
-            </ul>
+        
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Device</th>
+                        <th>Vendor</th>
+                        <th>Product</th>
+                        <th>ID</th>
+                        <th>Result</th>
+                        <th>Action</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="events-tbody">
+                    <tr><td colspan="8" class="no-data">Loading events...</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="stat-card">
-            <h3>🔐 Trusted Devices</h3>
-            <ul class="trusted-list" id="trusted-list">
-                {% if whitelist %}
-                    {% for device in whitelist %}
-                    <li><strong>{{ device.vendor }}</strong> — {{ device.name }}<br /><small>{{ device.hardware_id }}</small></li>
-                    {% endfor %}
-                {% else %}
-                <li>No trusted devices configured yet.</li>
-                {% endif %}
-            </ul>
+    </div>
+</section>
+
+<!-- Trusted Devices Section -->
+<section class="section" id="trusted">
+    <h2>🔐 Trusted Devices Registry</h2>
+    <div class="panel">
+        <div id="trusted-devices-list" class="devices-grid">
+            <p class="no-data">Loading trusted devices...</p>
+        </div>
+    </div>
+</section>
+
+<!-- Test Cases Section -->
+<section class="section" id="tests">
+    <h2>🧪 Automated Test Execution</h2>
+    <div class="panel">
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Execute system tests to verify functionality of the HID Defender monitoring and detection modules.</p>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div>
+                <h3>Available Tests</h3>
+                <div id="tests-list" class="alerts-list" style="max-height: 600px; padding-right: 1rem;">
+                    <p class="no-data">Loading tests...</p>
+                </div>
+            </div>
+            
+            <div>
+                <h3>Execution Results</h3>
+                <div id="test-execution-results" class="test-result-box">
+                    <p class="no-data" style="text-align: center; margin-top: 2rem;">Select a test to execute</p>
+                </div>
+            </div>
         </div>
     </div>
 </section>

@@ -17,11 +17,11 @@ try:
     from .device_monitor import get_macos_usb_devices
 except ImportError:
     # Fallback for testing or standalone execution
-    from config import (
+    from config import (  # type: ignore
         WHITELIST_PATH, ATTACK_VECTORS, BIG_BRANDS,
         SUSPICIOUS_MAPPING, RECENT_SEEN
     )
-    from device_monitor import get_macos_usb_devices
+    from device_monitor import get_macos_usb_devices  # type: ignore
 
 HWID_RE = re.compile(r"(VID_[0-9A-F]{4}).*(PID_[0-9A-F]{4})")
 

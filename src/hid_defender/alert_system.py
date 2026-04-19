@@ -12,7 +12,7 @@ from typing import cast, Any
 try:
     from .config import IS_WINDOWS, IS_MACOS, IS_LINUX
 except ImportError:
-    from config import IS_WINDOWS, IS_MACOS, IS_LINUX
+    from config import IS_WINDOWS, IS_MACOS, IS_LINUX  # type: ignore
 
 # Setup logger
 logger = logging.getLogger(__name__)

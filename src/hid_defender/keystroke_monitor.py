@@ -13,7 +13,7 @@ from typing import Optional, Any, List, Dict
 try:
     from .config import IS_MACOS, IS_WINDOWS, KEYSTROKE_THRESHOLD, FIRST_INPUT_DELAY_THRESHOLD, MALICIOUS_PATTERNS
 except ImportError:
-    from config import IS_MACOS, IS_WINDOWS, KEYSTROKE_THRESHOLD, FIRST_INPUT_DELAY_THRESHOLD, MALICIOUS_PATTERNS
+    from config import IS_MACOS, IS_WINDOWS, KEYSTROKE_THRESHOLD, FIRST_INPUT_DELAY_THRESHOLD, MALICIOUS_PATTERNS  # type: ignore
 
 # Keystroke monitoring
 try:
@@ -238,7 +238,9 @@ class KeystrokeMonitor:
         self.logger.error(msg)
         if IS_WINDOWS and winsound:
             try:
-                winsound.Beep(1200, 200)
+                beep = getattr(winsound, "Beep", None)
+                if beep:
+                    beep(1200, 200)
             except (OSError, AttributeError, TypeError) as e:
                 self.logger.debug(f"Failed to play alert sound: {e}")
 
@@ -252,8 +254,10 @@ class KeystrokeMonitor:
         self.logger.error(msg)
         if IS_WINDOWS and winsound:
             try:
-                winsound.Beep(1000, 200)
-                winsound.Beep(1000, 200)
+                beep = getattr(winsound, "Beep", None)
+                if beep:
+                    beep(1000, 200)
+                    beep(1000, 200)
             except (OSError, AttributeError, TypeError) as e:
                 self.logger.debug(f"Failed to play alert sound: {e}")
 
@@ -270,8 +274,10 @@ class KeystrokeMonitor:
         # Play alert sound
         if IS_WINDOWS and winsound:
             try:
-                winsound.Beep(1200, 200)
-                winsound.Beep(1200, 200)
+                beep = getattr(winsound, "Beep", None)
+                if beep:
+                    beep(1200, 200)
+                    beep(1200, 200)
             except (OSError, AttributeError, TypeError) as e:
                 self.logger.debug(f"Failed to play alert sound: {e}")
     

@@ -3,6 +3,7 @@ import csv
 import json
 import sys
 import os
+import subprocess
 from datetime import datetime
 from collections import defaultdict
 
@@ -10,11 +11,82 @@ from collections import defaultdict
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from hid_defender.config import LOG_PATH, WHITELIST_PATH
 
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
+
+
+def discover_tests():
+    """Discover all test files and test functions."""
+    test_dir = project_root / "tests"
+    tests = []
+    
+    if test_dir.exists():
+        for test_file in sorted(test_dir.glob("test_*.py")):
+            module_name = test_file.stem
+            try:
+                with open(test_file, 'r') as f:
+                    content = f.read()
+                    # Extract test functions and class methods
+                    import re
+                    # Find all test functions and methods
+                    test_funcs = re.findall(r'def (test_[a-zA-Z0-9_]+)\(', content)
+                    for func in test_funcs:
+                        tests.append({
+                            "id": f"{module_name}::{func}",
+                            "module": module_name,
+                            "name": func,
+                            "file": str(test_file.name)
+                        })
+            except Exception as e:
+                print(f"Error reading {test_file}: {e}")
+    
+    return tests
+
+
+def run_test(test_id):
+    """Run a specific test and capture output."""
+    module_name, test_name = test_id.split("::")
+    test_path = f"tests/{module_name}.py"
+    
+    # Try to find the virtualenv pytest first, fallback to sys.executable -m pytest
+    venv_pytest = project_root / ".venv" / "bin" / "pytest"
+    if venv_pytest.exists():
+        pytest_cmd = [str(venv_pytest)]
+    else:
+        pytest_cmd = [sys.executable, "-m", "pytest"]
+        
+    try:
+        result = subprocess.run(
+            pytest_cmd + [test_path, "-k", test_name, "-v", "--tb=short"],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        return {
+            "passed": result.returncode == 0,
+            "stdout": result.stdout,
+            "stderr": result.stderr,
+            "returncode": result.returncode
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "passed": False,
+            "stdout": "",
+            "stderr": "Test execution timed out",
+            "returncode": -1
+        }
+    except Exception as e:
+        return {
+            "passed": False,
+            "stdout": "",
+            "stderr": str(e),
+            "returncode": -1
+        }
 
 
 def load_log_rows():
@@ -289,6 +361,58 @@ def api_stats():
         "top_reasons": [{"reason": r[0], "count": r[1]} for r in top_reasons],
         "timestamp": datetime.now().isoformat()
     })
+
+
+@app.route("/api/tests")
+def api_tests():
+    """API endpoint to list all available tests."""
+    tests = discover_tests()
+    return jsonify({
+        "tests": tests,
+        "total": len(tests),
+        "timestamp": datetime.now().isoformat()
+    })
+
+
+@app.route("/api/tests/run", methods=["POST"])
+def api_run_test():
+    """API endpoint to run a specific test."""
+    data = request.get_json()
+    test_id = data.get("test_id")
+    
+    if not test_id:
+        return jsonify({"error": "test_id required"}), 400
+    
+    result = run_test(test_id)
+    return jsonify({
+        "test_id": test_id,
+        "result": result,
+        "timestamp": datetime.now().isoformat()
+    })
+
+
+@app.route("/api/simulate_attack", methods=["POST"])
+def api_simulate_attack():
+    """API endpoint to trigger the attack simulation script."""
+    try:
+        script_path = project_root / "scripts" / "simulate_attacks.py"
+        result = subprocess.run(
+            [sys.executable, str(script_path)],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if result.returncode == 0:
+            import json
+            try:
+                attacks_data = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                attacks_data = []
+            return jsonify({"success": True, "message": "Attacks simulated successfully", "attacks": attacks_data})
+        else:
+            return jsonify({"success": False, "error": result.stderr}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ IS_WINDOWS = sys.platform == "win32"
 IS_MACOS = sys.platform == "darwin"
 IS_LINUX = sys.platform.startswith("linux")
 
-# File paths - point to parent directory where data files are stored
-DIR_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+# File paths - point to project root where data files are stored
+DIR_PATH = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 WHITELIST_PATH = os.path.join(DIR_PATH, "data", "trusted_devices.json")
 LOG_PATH = os.path.join(DIR_PATH, "hid_alerts.log")
 
