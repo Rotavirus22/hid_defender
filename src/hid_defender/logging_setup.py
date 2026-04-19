@@ -12,7 +12,7 @@ from typing import Optional
 try:
     from .config import LOG_PATH
 except ImportError:
-    from config import LOG_PATH
+    from config import LOG_PATH  # type: ignore
 
 class CSVLogFormatter(logging.Formatter):
     """Custom formatter to keep our audit log in CSV format."""
