@@ -1,121 +1,177 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<section class="container">
-    <!-- Summary Stats Cards (Top) -->
-    <div class="summary-stats" id="stats-cards">
-        <div class="stat-box" id="stat-total">
-            <h3>📊 Total Events</h3>
-            <p class="stat-number">{{ summary.total_events }}</p>
+<!-- Dashboard Section -->
+<section class="section active" id="dashboard-section">
+    <div class="container">
+        <!-- Summary Stats Cards (Top) -->
+        <div class="summary-stats" id="stats-cards">
+            <div class="stat-box" id="stat-total">
+                <h3>📊 Total Events</h3>
+                <p class="stat-number">{{ summary.total_events }}</p>
+            </div>
+            <div class="stat-box success" id="stat-trusted">
+                <h3>✅ Trusted</h3>
+                <p class="stat-number">{{ summary.trusted }}</p>
+            </div>
+            <div class="stat-box info" id="stat-safe">
+                <h3>ℹ️ Safe</h3>
+                <p class="stat-number">{{ summary.safe }}</p>
+            </div>
+            <div class="stat-box warning" id="stat-untrusted">
+                <h3>⚠️ Untrusted</h3>
+                <p class="stat-number">{{ summary.untrusted }}</p>
+            </div>
+            <div class="stat-box danger" id="stat-blocked">
+                <h3>🚫 Blocked</h3>
+                <p class="stat-number">{{ summary.blocked }}</p>
+            </div>
+            <div class="stat-box" id="stat-disabled">
+                <h3>🔒 Disabled</h3>
+                <p class="stat-number">{{ summary.disabled }}</p>
+            </div>
         </div>
-        <div class="stat-box success" id="stat-trusted">
-            <h3>✅ Trusted</h3>
-            <p class="stat-number">{{ summary.trusted }}</p>
+
+        <!-- Monitoring & Events Section -->
+        <div class="monitoring-header">
+            <h2>🔍 Monitoring & Events</h2>
         </div>
-        <div class="stat-box info" id="stat-safe">
-            <h3>ℹ️ Safe</h3>
-            <p class="stat-number">{{ summary.safe }}</p>
-        </div>
-        <div class="stat-box warning" id="stat-untrusted">
-            <h3>⚠️ Untrusted</h3>
-            <p class="stat-number">{{ summary.untrusted }}</p>
-        </div>
-        <div class="stat-box danger" id="stat-blocked">
-            <h3>🚫 Blocked</h3>
-            <p class="stat-number">{{ summary.blocked }}</p>
-        </div>
-        <div class="stat-box" id="stat-disabled">
-            <h3>🔒 Disabled</h3>
-            <p class="stat-number">{{ summary.disabled }}</p>
+
+        <div class="monitoring-grid">
+            <!-- Alert Panel -->
+            <div class="panel alert-panel">
+                <h3>⚠️ Alert Panel (<span id="alert-count">0</span>)</h3>
+                <div class="alerts-list" id="alerts-list">
+                    <p class="no-data">Loading alerts...</p>
+                </div>
+            </div>
+
+            <!-- Activity Logs -->
+            <div class="panel activity-panel">
+                <h3>📋 Activity Logs</h3>
+                <div class="logs-list" id="activity-list">
+                    <p class="no-data">Loading activity...</p>
+                </div>
+            </div>
+
+            <!-- Devices Panel -->
+            <div class="panel devices-panel">
+                <h3>📱 Active Devices</h3>
+                <div class="devices-list" id="devices-list">
+                    <p class="no-data">Loading devices...</p>
+                </div>
+            </div>
+
+            <!-- Top Reasons Panel -->
+            <div class="panel reasons-panel">
+                <h3>📊 Top Alert Reasons</h3>
+                <div class="reasons-list" id="reasons-list">
+                    <p class="no-data">Loading reasons...</p>
+                </div>
+            </div>
         </div>
     </div>
+</section>
 
-    <!-- Monitoring & Events Section -->
-    <div class="monitoring-header">
-        <h2>🔍 Monitoring & Events</h2>
+<!-- Devices Section -->
+<section class="section" id="devices-section">
+    <div class="container">
+        <h2>📱 Device Management</h2>
+        <div class="panel">
+            <div class="devices-list full-width" id="devices-full-list">
+                <p class="no-data">Loading devices...</p>
+            </div>
+        </div>
     </div>
+</section>
 
-    <div class="monitoring-grid">
-        <!-- Alert Panel -->
-        <div class="panel alert-panel">
-            <h3>⚠️ Alert Panel (<span id="alert-count">0</span>)</h3>
-            <div class="alerts-list" id="alerts-list">
+<!-- Alerts Section -->
+<section class="section" id="alerts-section">
+    <div class="container">
+        <h2>⚠️ All Alerts</h2>
+        <div class="panel">
+            <div class="alerts-list full-width" id="alerts-full-list">
                 <p class="no-data">Loading alerts...</p>
             </div>
         </div>
-
-        <!-- Activity Logs -->
-        <div class="panel activity-panel">
-            <h3>📋 Activity Logs</h3>
-            <div class="logs-list" id="activity-list">
-                <p class="no-data">Loading activity...</p>
-            </div>
-        </div>
     </div>
+</section>
 
-    <!-- Device Monitoring Panel -->
-    <div class="device-panel-header">
-        <h2>📱 Device Monitoring Panel</h2>
-    </div>
-
-    <div class="devices-grid" id="devices-grid">
-        <p class="no-data">Loading devices...</p>
-    </div>
-
-    <!-- Recent Events Table -->
-    <div class="events-section">
-        <h2>📅 Recent Events</h2>
-        <div class="table-controls">
-            <input type="text" id="event-filter" placeholder="🔍 Filter events..." class="filter-input">
-            <select id="result-filter" class="filter-select">
+<!-- Logs Section -->
+<section class="section" id="logs-section">
+    <div class="container">
+        <h2>📋 Event Logs</h2>
+        <div class="panel">
+            <input type="text" id="event-filter" placeholder="🔍 Filter events..." style="width: 100%; margin-bottom: 15px;"/>
+            <select id="result-filter" style="width: 100%; margin-bottom: 15px;">
                 <option value="">All Results</option>
                 <option value="trusted">Trusted</option>
                 <option value="safe">Safe</option>
                 <option value="untrusted">Untrusted</option>
             </select>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Device</th>
+                        <th>Vendor</th>
+                        <th>Result</th>
+                        <th>Action</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="events-table-body">
+                    <tr><td colspan="6" class="no-data">Loading events...</td></tr>
+                </tbody>
+            </table>
         </div>
-        <table class="events-table">
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Device</th>
-                    <th>Vendor</th>
-                    <th>Product</th>
-                    <th>ID</th>
-                    <th>Result</th>
-                    <th>Action</th>
-                    <th>Reason</th>
-                </tr>
-            </thead>
-            <tbody id="events-tbody">
-                <tr><td colspan="8" class="no-data">Loading events...</td></tr>
-            </tbody>
-        </table>
     </div>
+</section>
 
-    <!-- Stats Section -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <h3>⏱️ Timing & Stats</h3>
-            <p><strong>Last Event:</strong> <span id="last-event-time">N/A</span></p>
-            <p><strong>Unique Devices:</strong> <span id="unique-devices">0</span></p>
-            <p><strong>Average Event Interval:</strong> <span id="avg-interval">N/A</span></p>
-            <h4>Top Reasons</h4>
-            <ul id="top-reasons">
-                <li>Loading...</li>
-            </ul>
+<!-- Trusted Devices Section -->
+<section class="section" id="trusted-section">
+    <div class="container">
+        <h2>🔐 Trusted Devices</h2>
+        <div class="panel">
+            <div id="trusted-devices-list">
+                <p class="no-data">Loading trusted devices...</p>
+            </div>
         </div>
-        <div class="stat-card">
-            <h3>🔐 Trusted Devices</h3>
-            <ul class="trusted-list" id="trusted-list">
-                {% if whitelist %}
-                    {% for device in whitelist %}
-                    <li><strong>{{ device.vendor }}</strong> — {{ device.name }}<br /><small>{{ device.hardware_id }}</small></li>
-                    {% endfor %}
-                {% else %}
-                <li>No trusted devices configured yet.</li>
-                {% endif %}
-            </ul>
+    </div>
+</section>
+
+<!-- Test Cases Section -->
+<section class="section" id="tests-section">
+    <div class="container">
+        <h2>🧪 Test Cases & Execution</h2>
+        <div class="panel">
+            <h3>Available Tests</h3>
+            <div id="tests-list" style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                <p class="no-data">Loading tests...</p>
+            </div>
+            <hr>
+            <div id="test-execution-results">
+                <p class="no-data">Select a test to execute</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Settings Section -->
+<section class="section" id="settings-section">
+    <div class="container">
+        <h2>⚙️ Settings</h2>
+        <div class="panel">
+            <h3>Dashboard Settings</h3>
+            <label>
+                <input type="checkbox" id="auto-refresh-setting" checked>
+                Enable Auto-Refresh
+            </label>
+            <label>
+                Refresh Interval (seconds):
+                <input type="number" id="refresh-interval" value="3" min="1" max="60">
+            </label>
+            <button id="save-settings" class="button">💾 Save Settings</button>
         </div>
     </div>
 </section>
